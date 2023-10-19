@@ -1,7 +1,6 @@
 package eu.merloteducation.s3library.service;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import eu.merloteducation.s3library.config.StorageClientConfig;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(classes = { StorageClientConfig.class })
+@SpringBootTest(classes = { StorageClient.class})
 public class StorageClientTest {
     @Autowired
     StorageClient storageClient;
