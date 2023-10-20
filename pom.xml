@@ -48,6 +48,7 @@
       <version>1.18.28</version>
     </dependency>
   </dependencies>
+
   <build>
     <resources>
       <resource>
@@ -60,11 +61,11 @@
     </resources>
   </build>
 
-  <!-- <distributionManagement>
+  <distributionManagement>
       <repository>
           <id>github</id>
           <name>GitHub Packages</name>
           <url>https://maven.pkg.github.com/merlot-education/s3-library</url>
       </repository>
-  </distributionManagement> -->
+  </distributionManagement>
 </project>

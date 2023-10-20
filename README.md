@@ -1,6 +1,20 @@
+# Use the Library
+
+To use this library you have to configure following properties in the application.yml:
+
+    s3-library:
+      access-key: [ACCESSKEY]
+      secret: [SECRET]
+      service-endpoint: [SERVICEENDPOINT]
+      signing-region: [SIGNINGREGION, e.g. "de"]
+      signer-type: [SIGNERTYPE, e.g. "S3SignerType"]
+      bucket: [BUCKET]
+      root-directory: [ROOTDIRECTORY]
+
+
 # Run Tests inside StorageClientTest
 
-You may want to run the tests inside StorageClientTest. For this you have to edit the run configurations and add
+You may want to run the tests inside StorageClientTest. For this edit the run configurations and add
 following environment variables with valid values:
 
 1. S3LIBRARY_ACCESSKEY
