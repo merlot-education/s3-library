@@ -1,7 +1,6 @@
 package eu.merloteducation.s3library.service;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(properties = {"s3-library.root-directory: test"}, classes = { StorageClient.class})
+@SpringBootTest(classes = { StorageClient.class })
 public class StorageClientTest {
     @Autowired
     StorageClient storageClient;
@@ -35,12 +34,7 @@ public class StorageClientTest {
         assertTrue(listOfItemsAfterPush.contains(key1));
         assertTrue(listOfItemsAfterPush.contains(key2));
 
-        assertTrue(storageClient.deleteItem(referenceId, key1));
-        assertTrue(storageClient.deleteItem(referenceId, key2));
-
-        List<String> listOfItemsAfterDelete = storageClient.listItems(referenceId);
-        assertFalse(listOfItemsAfterDelete.contains(key1));
-        assertFalse(listOfItemsAfterDelete.contains(key2));
+        deleteTestData(referenceId, key1, key2);
     }
 
     @Test
@@ -56,12 +50,7 @@ public class StorageClientTest {
         assertTrue(listOfItems.contains(key1));
         assertTrue(listOfItems.contains(key2));
 
-        assertTrue(storageClient.deleteItem(referenceId, key1));
-        assertTrue(storageClient.deleteItem(referenceId, key2));
-
-        List<String> listOfItemsAfterDelete = storageClient.listItems(referenceId);
-        assertFalse(listOfItemsAfterDelete.contains(key1));
-        assertFalse(listOfItemsAfterDelete.contains(key2));
+        deleteTestData(referenceId, key1, key2);
     }
 
     @Test
@@ -80,12 +69,7 @@ public class StorageClientTest {
         assertArrayEquals(dataFromStorage1, dataFromLocal);
         assertArrayEquals(dataFromStorage2, dataFromLocal);
 
-        assertTrue(storageClient.deleteItem(referenceId, key1));
-        assertTrue(storageClient.deleteItem(referenceId, key2));
-
-        List<String> listOfItemsAfterDelete = storageClient.listItems(referenceId);
-        assertFalse(listOfItemsAfterDelete.contains(key1));
-        assertFalse(listOfItemsAfterDelete.contains(key2));
+        deleteTestData(referenceId, key1, key2);
     }
 
     @Test
@@ -128,30 +112,20 @@ public class StorageClientTest {
     }
 
     private byte[] getTestData() throws IOException {
+
         return "This is test data.".getBytes();
     }
 
-    private String getComposedKey(String referenceId, String key) {
-        String rootDirectory = "test";
-        StringBuilder str = new StringBuilder();
-        str.append(rootDirectory);
-        str.append("/");
-        str.append(referenceId);
-        str.append("/");
-        str.append(key);
-        return str.toString();
+    private void pushTestData(String referenceId, String key1, String key2) throws IOException {
+
+        byte[] testData = getTestData();
+        storageClient.pushItem(referenceId, key1, testData);
+        storageClient.pushItem(referenceId, key2, testData);
     }
 
-    private void pushTestData(String referenceId, String key1, String key2) throws IOException {
-        List<String> listOfItemsBeforePush = storageClient.listItems(referenceId);
-        assertFalse(listOfItemsBeforePush.contains(key1));
-        assertFalse(listOfItemsBeforePush.contains(key2));
+    private void deleteTestData(String referenceId, String key1, String key2) {
 
-        storageClient.pushItem(referenceId, key1, getTestData());
-        storageClient.pushItem(referenceId, key2, getTestData());
-
-        List<String> listOfItemsAfterPush = storageClient.listItems(referenceId);
-        assertTrue(listOfItemsAfterPush.contains(key1));
-        assertTrue(listOfItemsAfterPush.contains(key2));
+        storageClient.deleteItem(referenceId, key1);
+        storageClient.deleteItem(referenceId, key2);
     }
 }

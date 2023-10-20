@@ -2,3 +2,4 @@ s3-library:
   signing-region: de
   signer-type: S3SignerType
   bucket: merlot-storage-test
+  root-directory: test
