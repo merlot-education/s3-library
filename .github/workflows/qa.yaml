@@ -37,4 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          S3LIBRARY_ACCESSKEY: ${{ secrets.S3LIBRARY_ACCESSKEY }}
+          S3LIBRARY_SECRET: ${{ secrets.S3LIBRARY_SECRET }}
+          S3LIBRARY_SERVICEENDPOINT: ${{ vars.S3LIBRARY_SERVICEENDPOINT }}
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=merlot-education_s3-library_AYtILs1Ou-OuXBcw70Bh
