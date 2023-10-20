@@ -3,6 +3,3 @@ s3-library:
   signer-type: S3SignerType
   bucket: merlot-storage-test
   root-directory: test
-  service-endpoint: ${S3LIBRARY_SERVICEENDPOINT}
-  access-key: ${S3LIBRARY_ACCESSKEY}
-  secret: ${S3LIBRARY_SECRET}
