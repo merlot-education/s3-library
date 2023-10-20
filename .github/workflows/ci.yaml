@@ -24,3 +24,6 @@ jobs:
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          S3LIBRARY_ACCESSKEY: ${{ secrets.S3LIBRARY_ACCESSKEY }}
+          S3LIBRARY_SECRET: ${{ secrets.S3LIBRARY_SECRET }}
+          S3LIBRARY_SERVICEENDPOINT: ${{ vars.S3LIBRARY_SERVICEENDPOINT }}
