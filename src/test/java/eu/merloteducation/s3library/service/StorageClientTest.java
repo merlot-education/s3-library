@@ -1,6 +1,5 @@
 package eu.merloteducation.s3library.service;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +16,7 @@ public class StorageClientTest {
     StorageClient storageClient;
 
     @Test
-    public void testPushItem() throws IOException {
+    public void testPushItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -38,7 +37,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testListItems() throws IOException {
+    public void testListItems() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -54,7 +53,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testGetItem() throws IOException {
+    public void testGetItem() throws IOException, StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -73,7 +72,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testDeleteItem() throws IOException {
+    public void testDeleteItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -85,8 +84,8 @@ public class StorageClientTest {
         assertTrue(listOfItemsBeforeDelete.contains(key1));
         assertTrue(listOfItemsBeforeDelete.contains(key2));
 
-        assertTrue(storageClient.deleteItem(referenceId, key1));
-        assertTrue(storageClient.deleteItem(referenceId, key2));
+        storageClient.deleteItem(referenceId, key1);
+        storageClient.deleteItem(referenceId, key2);
 
         List<String> listOfItemsAfterDelete = storageClient.listItems(referenceId);
         assertFalse(listOfItemsAfterDelete.contains(key1));
@@ -95,35 +94,33 @@ public class StorageClientTest {
 
     @Test
     public void testDeleteNonExistentItem() {
-
-        assertFalse(storageClient.deleteItem("dummy:00", "dummy"));
+        assertThrows(StorageClientException.class, () -> storageClient.deleteItem("dummy:00", "dummy"));
     }
 
     @Test
-    public void testListItemsForNonExistentReferenceId() {
+    public void testListItemsForNonExistentReferenceId() throws StorageClientException {
 
         assertTrue(storageClient.listItems("dummy:00").isEmpty());
     }
 
     @Test
-    public void testGetNonExistentItem() throws IOException {
-
-        assertThrows(AmazonS3Exception.class, () -> storageClient.getItem("dummy:00", "dummy"));
+    public void testGetNonExistentItem() {
+        assertThrows(StorageClientException.class, () -> storageClient.getItem("dummy:00", "dummy"));
     }
 
-    private byte[] getTestData() throws IOException {
+    private byte[] getTestData() {
 
         return "This is test data.".getBytes();
     }
 
-    private void pushTestData(String referenceId, String key1, String key2) throws IOException {
+    private void pushTestData(String referenceId, String key1, String key2) throws StorageClientException {
 
         byte[] testData = getTestData();
         storageClient.pushItem(referenceId, key1, testData);
         storageClient.pushItem(referenceId, key2, testData);
     }
 
-    private void deleteTestData(String referenceId, String key1, String key2) {
+    private void deleteTestData(String referenceId, String key1, String key2) throws StorageClientException {
 
         storageClient.deleteItem(referenceId, key1);
         storageClient.deleteItem(referenceId, key2);

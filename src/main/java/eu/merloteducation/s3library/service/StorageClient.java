@@ -1,12 +1,14 @@
 package eu.merloteducation.s3library.service;
 
 import com.amazonaws.ClientConfiguration;
+import com.amazonaws.SdkClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -34,25 +36,30 @@ public class StorageClient {
      * @param signerType signer type
      * @param bucket bucket
      * @param rootDirectory root directory
+     * @throws StorageClientCreationException if an error occurs while creating the storage client
      */
     public StorageClient(@Value("${s3-library.access-key}") String accessKey,
         @Value("${s3-library.secret}") String secret, @Value("${s3-library.service-endpoint}") String serviceEndpoint,
         @Value("${s3-library.signing-region}") String signingRegion,
         @Value("${s3-library.signer-type}") String signerType, @Value("${s3-library.bucket}") String bucket,
-        @Value("${s3-library.root-directory}") String rootDirectory) {
+        @Value("${s3-library.root-directory}") String rootDirectory) throws StorageClientCreationException {
 
         BasicAWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secret);
 
         ClientConfiguration clientConfiguration = new ClientConfiguration();
         clientConfiguration.setSignerOverride(signerType);
 
-        s3Client = AmazonS3ClientBuilder.standard().withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion))
-            .withClientConfiguration(clientConfiguration).build();
+        try {
+            s3Client = AmazonS3ClientBuilder.standard()
+                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion))
+                .withClientConfiguration(clientConfiguration).build();
+        } catch (IllegalArgumentException | SdkClientException exception) {
+            throw new StorageClientCreationException(exception.getMessage());
+        }
 
         this.bucket = bucket;
         this.rootDirectory = rootDirectory;
-
     }
 
     /**
@@ -60,12 +67,19 @@ public class StorageClient {
      *
      * @param referenceId scope of the items
      * @return list of items
+     * @throws StorageClientException if an error occurs while getting the list
      */
-    public List<String> listItems(String referenceId) {
+    public List<String> listItems(String referenceId) throws StorageClientException {
 
         String composedKey = getComposedKey(referenceId, "");
-        return s3Client.listObjectsV2(this.bucket, composedKey).getObjectSummaries().stream()
-            .map(obj -> removePrefix(obj.getKey(), composedKey)).toList();
+        ListObjectsV2Result listObjectsV2Result;
+        try {
+            listObjectsV2Result = s3Client.listObjectsV2(this.bucket, composedKey);
+        } catch (SdkClientException exception) {
+            throw new StorageClientException(exception.getMessage());
+        }
+        return listObjectsV2Result.getObjectSummaries().stream().map(obj -> removePrefix(obj.getKey(), composedKey))
+            .toList();
     }
 
     /**
@@ -74,11 +88,16 @@ public class StorageClient {
      * @param referenceId scope to push the item to
      * @param fileName name of the item
      * @param item item to push
+     * @throws StorageClientException if an error occurs while pushing the item
      */
-    public void pushItem(String referenceId, String fileName, byte[] item) {
+    public void pushItem(String referenceId, String fileName, byte[] item) throws StorageClientException {
 
         String composedKey = getComposedKey(referenceId, fileName);
-        s3Client.putObject(this.bucket, composedKey, new ByteArrayInputStream(item), null);
+        try {
+            s3Client.putObject(this.bucket, composedKey, new ByteArrayInputStream(item), null);
+        } catch (SdkClientException exception) {
+            throw new StorageClientException(exception.getMessage());
+        }
     }
 
     /**
@@ -88,11 +107,17 @@ public class StorageClient {
      * @param key key of the item
      * @return item
      * @throws IOException if an I/O error occurs
+     * @throws StorageClientException if an error occurs while getting the item
      */
-    public byte[] getItem(String referenceId, String key) throws IOException {
+    public byte[] getItem(String referenceId, String key) throws IOException, StorageClientException {
 
         String composedKey = getComposedKey(referenceId, key);
-        S3Object object = s3Client.getObject(new GetObjectRequest(this.bucket, composedKey));
+        S3Object object;
+        try {
+            object = s3Client.getObject(new GetObjectRequest(this.bucket, composedKey));
+        } catch (SdkClientException exception) {
+            throw new StorageClientException(exception.getMessage());
+        }
         return object.getObjectContent().readAllBytes();
     }
 
@@ -101,16 +126,20 @@ public class StorageClient {
      *
      * @param referenceId scope from where to delete the item
      * @param key key of the item
-     * @return true if deletion was successful, false if item was not found
+     * @throws StorageClientException if an error occurs while deleting the item
      */
-    public boolean deleteItem(String referenceId, String key) {
+    public void deleteItem(String referenceId, String key) throws StorageClientException {
 
         String composedKey = getComposedKey(referenceId, key);
-        if (s3Client.doesObjectExist(this.bucket, composedKey)) {
-            s3Client.deleteObject(this.bucket, composedKey);
-            return true;
-        } else {
-            return false;
+        try {
+            if (s3Client.doesObjectExist(this.bucket, composedKey)) {
+                s3Client.deleteObject(this.bucket, composedKey);
+            } else {
+                throw new StorageClientException(
+                    String.format("The item you want to delete (%s) does not exist.", composedKey));
+            }
+        } catch (SdkClientException exception) {
+            throw new StorageClientException(exception.getMessage());
         }
     }
 
