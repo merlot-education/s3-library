@@ -136,7 +136,7 @@ public class StorageClient {
                 s3Client.deleteObject(this.bucket, composedKey);
             } else {
                 throw new StorageClientException(
-                    String.format("The item you want to delete (%s) does not exist.", composedKey));
+                    String.format("The item you want to delete (%s) does not exist.", key));
             }
         } catch (SdkClientException exception) {
             throw new StorageClientException(exception.getMessage());
