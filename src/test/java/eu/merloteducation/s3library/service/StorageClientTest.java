@@ -38,7 +38,7 @@ public class StorageClientTest {
     String rootDirectory;
 
     @Test
-    public void testPushItem() throws StorageClientException {
+    void testPushItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -59,7 +59,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testListItems() throws StorageClientException {
+    void testListItems() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -75,7 +75,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testGetItem() throws IOException, StorageClientException {
+    void testGetItem() throws IOException, StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -94,7 +94,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testDeleteItem() throws StorageClientException {
+    void testDeleteItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -115,7 +115,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testDeleteNonExistentItem() {
+    void testDeleteNonExistentItem() {
 
         Exception exception = assertThrows(StorageClientException.class,
             () -> storageClient.deleteItem("dummy:00", "dummy"));
@@ -125,13 +125,13 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testListItemsForNonExistentReferenceId() throws StorageClientException {
+    void testListItemsForNonExistentReferenceId() throws StorageClientException {
 
         assertTrue(storageClient.listItems("dummy:00").isEmpty());
     }
 
     @Test
-    public void testGetNonExistentItem() {
+    void testGetNonExistentItem() {
 
         Exception exception = assertThrows(StorageClientException.class,
             () -> storageClient.getItem("dummy:00", "dummy"));
@@ -144,7 +144,7 @@ public class StorageClientTest {
     //Root directory will just take any value to use as root directory name, there cannot be an invalid name.
 
     @Test
-    public void testInvalidSignerType() {
+    void testInvalidSignerType() {
 
         String invalidSignerType = "dummy";
         assertThrows(StorageClientCreationException.class,
@@ -153,7 +153,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testInvalidAccessKey() throws StorageClientCreationException {
+    void testInvalidAccessKey() throws StorageClientCreationException {
 
         String invalidAccessKey = "dummy";
         StorageClient client = new StorageClient(invalidAccessKey, secret, serviceEndpoint, signingRegion, signerType,
@@ -181,7 +181,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testInvalidSecret() throws StorageClientCreationException {
+    void testInvalidSecret() throws StorageClientCreationException {
 
         String invalidSecret = "dummy";
         StorageClient client = new StorageClient(accessKey, invalidSecret, serviceEndpoint, signingRegion, signerType,
@@ -211,7 +211,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testInvalidServiceEndpoint() throws StorageClientCreationException {
+    void testInvalidServiceEndpoint() throws StorageClientCreationException {
 
         String invalidServiceEndpoint = "dummy.dummy";
         StorageClient client = new StorageClient(accessKey, secret, invalidServiceEndpoint, signingRegion, signerType,
@@ -239,7 +239,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testInvalidBucket() throws StorageClientCreationException {
+    void testInvalidBucket() throws StorageClientCreationException {
 
         String invalidBucket = "dummy";
         StorageClient client = new StorageClient(accessKey, secret, serviceEndpoint, signingRegion, signerType,
