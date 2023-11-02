@@ -1,9 +1,9 @@
 package eu.merloteducation.s3library.service;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
@@ -16,8 +16,29 @@ public class StorageClientTest {
     @Autowired
     StorageClient storageClient;
 
+    @Value("${s3-library.access-key}")
+    String accessKey;
+
+    @Value("${s3-library.secret}")
+    String secret;
+
+    @Value("${s3-library.service-endpoint}")
+    String serviceEndpoint;
+
+    @Value("${s3-library.signing-region}")
+    String signingRegion;
+
+    @Value("${s3-library.signer-type}")
+    String signerType;
+
+    @Value("${s3-library.bucket}")
+    String bucket;
+
+    @Value("${s3-library.root-directory}")
+    String rootDirectory;
+
     @Test
-    public void testPushItem() throws IOException {
+    void testPushItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -38,7 +59,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testListItems() throws IOException {
+    void testListItems() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -54,7 +75,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testGetItem() throws IOException {
+    void testGetItem() throws IOException, StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -73,7 +94,7 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testDeleteItem() throws IOException {
+    void testDeleteItem() throws StorageClientException {
 
         String referenceId = "test:01";
         String key1 = "test";
@@ -85,8 +106,8 @@ public class StorageClientTest {
         assertTrue(listOfItemsBeforeDelete.contains(key1));
         assertTrue(listOfItemsBeforeDelete.contains(key2));
 
-        assertTrue(storageClient.deleteItem(referenceId, key1));
-        assertTrue(storageClient.deleteItem(referenceId, key2));
+        storageClient.deleteItem(referenceId, key1);
+        storageClient.deleteItem(referenceId, key2);
 
         List<String> listOfItemsAfterDelete = storageClient.listItems(referenceId);
         assertFalse(listOfItemsAfterDelete.contains(key1));
@@ -94,36 +115,171 @@ public class StorageClientTest {
     }
 
     @Test
-    public void testDeleteNonExistentItem() {
+    void testDeleteNonExistentItem() {
 
-        assertFalse(storageClient.deleteItem("dummy:00", "dummy"));
+        Exception exception = assertThrows(StorageClientException.class,
+            () -> storageClient.deleteItem("dummy:00", "dummy"));
+        String expectedMessage = String.format("The item you want to delete (%s) does not exist.", "dummy");
+        String actualMessage = exception.getMessage();
+        assertEquals(actualMessage, expectedMessage);
     }
 
     @Test
-    public void testListItemsForNonExistentReferenceId() {
+    void testListItemsForNonExistentReferenceId() throws StorageClientException {
 
         assertTrue(storageClient.listItems("dummy:00").isEmpty());
     }
 
     @Test
-    public void testGetNonExistentItem() throws IOException {
+    void testGetNonExistentItem() {
 
-        assertThrows(AmazonS3Exception.class, () -> storageClient.getItem("dummy:00", "dummy"));
+        Exception exception = assertThrows(StorageClientException.class,
+            () -> storageClient.getItem("dummy:00", "dummy"));
+        String expectedMessage = "The specified key does not exist";
+        String actualMessage = exception.getMessage();
+        assertTrue(actualMessage.contains(expectedMessage));
     }
 
-    private byte[] getTestData() throws IOException {
+    //Invalid signing region does not affect the operations.
+    //Root directory will just take any value to use as root directory name, there cannot be an invalid name.
+
+    @Test
+    void testInvalidSignerType() {
+
+        String invalidSignerType = "dummy";
+        assertThrows(StorageClientCreationException.class,
+            () -> new StorageClient(accessKey, secret, serviceEndpoint, signingRegion, invalidSignerType, bucket,
+                rootDirectory));
+    }
+
+    @Test
+    void testInvalidAccessKey() throws StorageClientCreationException {
+
+        String invalidAccessKey = "dummy";
+        StorageClient client = new StorageClient(invalidAccessKey, secret, serviceEndpoint, signingRegion, signerType,
+            bucket, rootDirectory);
+
+        String expectedMessage = "Server Error";
+
+        Exception exceptionDelete = assertThrows(StorageClientException.class,
+            () -> client.deleteItem("dummy:00", "dummy"));
+        String actualMessageDelete = exceptionDelete.getMessage();
+        assertTrue(actualMessageDelete.contains(expectedMessage));
+
+        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
+        String actualMessageGet = exceptionGet.getMessage();
+        assertTrue(actualMessageGet.contains(expectedMessage));
+
+        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
+        String actualMessageList = exceptionList.getMessage();
+        assertTrue(actualMessageList.contains(expectedMessage));
+
+        Exception exceptionPush = assertThrows(StorageClientException.class,
+            () -> client.pushItem("dummy:00", "dummy", getTestData()));
+        String actualMessagePush = exceptionPush.getMessage();
+        assertTrue(actualMessagePush.contains(expectedMessage));
+    }
+
+    @Test
+    void testInvalidSecret() throws StorageClientCreationException {
+
+        String invalidSecret = "dummy";
+        StorageClient client = new StorageClient(accessKey, invalidSecret, serviceEndpoint, signingRegion, signerType,
+            bucket, rootDirectory);
+
+        Exception exceptionDelete = assertThrows(StorageClientException.class,
+            () -> client.deleteItem("dummy:00", "dummy"));
+        String expectedMessageDelete = "Forbidden";
+        String actualMessageDelete = exceptionDelete.getMessage();
+        assertTrue(actualMessageDelete.contains(expectedMessageDelete));
+
+        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
+        String expectedMessageGet = "Check your AWS Secret Access Key and signing method";
+        String actualMessageGet = exceptionGet.getMessage();
+        assertTrue(actualMessageGet.contains(expectedMessageGet));
+
+        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
+        String expectedMessageList = "Check your AWS Secret Access Key and signing method";
+        String actualMessageList = exceptionList.getMessage();
+        assertTrue(actualMessageList.contains(expectedMessageList));
+
+        Exception exceptionPush = assertThrows(StorageClientException.class,
+            () -> client.pushItem("dummy:00", "dummy", getTestData()));
+        String expectedMessagePush = "Bad request";
+        String actualMessagePush = exceptionPush.getMessage();
+        assertTrue(actualMessagePush.contains(expectedMessagePush));
+    }
+
+    @Test
+    void testInvalidServiceEndpoint() throws StorageClientCreationException {
+
+        String invalidServiceEndpoint = "dummy.dummy";
+        StorageClient client = new StorageClient(accessKey, secret, invalidServiceEndpoint, signingRegion, signerType,
+            bucket, rootDirectory);
+
+        String expectedMessage = "Unable to execute HTTP request";
+
+        Exception exceptionDelete = assertThrows(StorageClientException.class,
+            () -> client.deleteItem("dummy:00", "dummy"));
+        String actualMessageDelete = exceptionDelete.getMessage();
+        assertTrue(actualMessageDelete.contains(expectedMessage));
+
+        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
+        String actualMessageGet = exceptionGet.getMessage();
+        assertTrue(actualMessageGet.contains(expectedMessage));
+
+        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
+        String actualMessageList = exceptionList.getMessage();
+        assertTrue(actualMessageList.contains(expectedMessage));
+
+        Exception exceptionPush = assertThrows(StorageClientException.class,
+            () -> client.pushItem("dummy:00", "dummy", getTestData()));
+        String actualMessagePush = exceptionPush.getMessage();
+        assertTrue(actualMessagePush.contains(expectedMessage));
+    }
+
+    @Test
+    void testInvalidBucket() throws StorageClientCreationException {
+
+        String invalidBucket = "dummy";
+        StorageClient client = new StorageClient(accessKey, secret, serviceEndpoint, signingRegion, signerType,
+            invalidBucket, rootDirectory);
+
+        String expectedMessage = "Access Denied";
+
+        Exception exceptionDelete = assertThrows(StorageClientException.class,
+            () -> client.deleteItem("dummy:00", "dummy"));
+        String expectedMessageDelete = "Forbidden";
+        String actualMessageDelete = exceptionDelete.getMessage();
+        assertTrue(actualMessageDelete.contains(expectedMessageDelete));
+
+        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
+        String actualMessageGet = exceptionGet.getMessage();
+        assertTrue(actualMessageGet.contains(expectedMessage));
+
+        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
+        String actualMessageList = exceptionList.getMessage();
+        assertTrue(actualMessageList.contains(expectedMessage));
+
+        Exception exceptionPush = assertThrows(StorageClientException.class,
+            () -> client.pushItem("dummy:00", "dummy", getTestData()));
+        String actualMessagePush = exceptionPush.getMessage();
+        assertTrue(actualMessagePush.contains(expectedMessage));
+    }
+
+    private byte[] getTestData() {
 
         return "This is test data.".getBytes();
     }
 
-    private void pushTestData(String referenceId, String key1, String key2) throws IOException {
+    private void pushTestData(String referenceId, String key1, String key2) throws StorageClientException {
 
         byte[] testData = getTestData();
         storageClient.pushItem(referenceId, key1, testData);
         storageClient.pushItem(referenceId, key2, testData);
     }
 
-    private void deleteTestData(String referenceId, String key1, String key2) {
+    private void deleteTestData(String referenceId, String key1, String key2) throws StorageClientException {
 
         storageClient.deleteItem(referenceId, key1);
         storageClient.deleteItem(referenceId, key2);
