@@ -1,4 +1,15 @@
-# Use the Library
+# MERLOT S3 Library
+
+This repository contains a maven library that abstracts interaction with S3 Buckets for data storage and retrieval.
+
+## Structure
+
+```
+├── src/main/java/eu/merloteducation/s3library
+│   ├── service    # provides Spring services for interacting with a configured S3 bucket
+```
+
+## Use the Library
 
 To use this library you have to configure following properties in the application.yml:
 
@@ -12,7 +23,7 @@ To use this library you have to configure following properties in the applicatio
       root-directory: [ROOTDIRECTORY]
 
 
-# Run Tests inside StorageClientTest
+## Run Tests inside StorageClientTest
 
 You may want to run the tests inside StorageClientTest. For this edit the run configurations and add
 following environment variables with valid values:
