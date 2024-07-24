@@ -16,11 +16,13 @@
 
 package eu.merloteducation.s3library.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,7 +30,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = { StorageClient.class })
-public class StorageClientTest {
+class StorageClientTest {
     @Autowired
     StorageClient storageClient;
 
@@ -52,6 +54,11 @@ public class StorageClientTest {
 
     @Value("${s3-library.root-directory}")
     String rootDirectory;
+
+    @BeforeEach
+    public void setup() {
+        ReflectionTestUtils.setField(storageClient, "s3Client", new AmazonS3Fake());
+    }
 
     @Test
     void testPushItem() throws StorageClientException {
@@ -169,97 +176,12 @@ public class StorageClientTest {
     }
 
     @Test
-    void testInvalidAccessKey() throws StorageClientCreationException {
-
-        String invalidAccessKey = "dummy";
-        StorageClient client = new StorageClient(invalidAccessKey, secret, serviceEndpoint, signingRegion, signerType,
-            bucket, rootDirectory);
-
-        String expectedMessage = "Server Error";
-
-        Exception exceptionDelete = assertThrows(StorageClientException.class,
-            () -> client.deleteItem("dummy:00", "dummy"));
-        String actualMessageDelete = exceptionDelete.getMessage();
-        assertTrue(actualMessageDelete.contains(expectedMessage));
-
-        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
-        String actualMessageGet = exceptionGet.getMessage();
-        assertTrue(actualMessageGet.contains(expectedMessage));
-
-        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
-        String actualMessageList = exceptionList.getMessage();
-        assertTrue(actualMessageList.contains(expectedMessage));
-
-        Exception exceptionPush = assertThrows(StorageClientException.class,
-            () -> client.pushItem("dummy:00", "dummy", getTestData()));
-        String actualMessagePush = exceptionPush.getMessage();
-        assertTrue(actualMessagePush.contains(expectedMessage));
-    }
-
-    @Test
-    void testInvalidSecret() throws StorageClientCreationException {
-
-        String invalidSecret = "dummy";
-        StorageClient client = new StorageClient(accessKey, invalidSecret, serviceEndpoint, signingRegion, signerType,
-            bucket, rootDirectory);
-
-        Exception exceptionDelete = assertThrows(StorageClientException.class,
-            () -> client.deleteItem("dummy:00", "dummy"));
-        String expectedMessageDelete = "Forbidden";
-        String actualMessageDelete = exceptionDelete.getMessage();
-        assertTrue(actualMessageDelete.contains(expectedMessageDelete));
-
-        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
-        String expectedMessageGet = "Check your AWS Secret Access Key and signing method";
-        String actualMessageGet = exceptionGet.getMessage();
-        assertTrue(actualMessageGet.contains(expectedMessageGet));
-
-        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
-        String expectedMessageList = "Check your AWS Secret Access Key and signing method";
-        String actualMessageList = exceptionList.getMessage();
-        assertTrue(actualMessageList.contains(expectedMessageList));
-
-        Exception exceptionPush = assertThrows(StorageClientException.class,
-            () -> client.pushItem("dummy:00", "dummy", getTestData()));
-        String expectedMessagePush = "Bad request";
-        String actualMessagePush = exceptionPush.getMessage();
-        assertTrue(actualMessagePush.contains(expectedMessagePush));
-    }
-
-    @Test
-    void testInvalidServiceEndpoint() throws StorageClientCreationException {
-
-        String invalidServiceEndpoint = "dummy.dummy";
-        StorageClient client = new StorageClient(accessKey, secret, invalidServiceEndpoint, signingRegion, signerType,
-            bucket, rootDirectory);
-
-        String expectedMessage = "Unable to execute HTTP request";
-
-        Exception exceptionDelete = assertThrows(StorageClientException.class,
-            () -> client.deleteItem("dummy:00", "dummy"));
-        String actualMessageDelete = exceptionDelete.getMessage();
-        assertTrue(actualMessageDelete.contains(expectedMessage));
-
-        Exception exceptionGet = assertThrows(StorageClientException.class, () -> client.getItem("dummy:00", "dummy"));
-        String actualMessageGet = exceptionGet.getMessage();
-        assertTrue(actualMessageGet.contains(expectedMessage));
-
-        Exception exceptionList = assertThrows(StorageClientException.class, () -> client.listItems("dummy:00"));
-        String actualMessageList = exceptionList.getMessage();
-        assertTrue(actualMessageList.contains(expectedMessage));
-
-        Exception exceptionPush = assertThrows(StorageClientException.class,
-            () -> client.pushItem("dummy:00", "dummy", getTestData()));
-        String actualMessagePush = exceptionPush.getMessage();
-        assertTrue(actualMessagePush.contains(expectedMessage));
-    }
-
-    @Test
     void testInvalidBucket() throws StorageClientCreationException {
 
         String invalidBucket = "dummy";
         StorageClient client = new StorageClient(accessKey, secret, serviceEndpoint, signingRegion, signerType,
             invalidBucket, rootDirectory);
+        ReflectionTestUtils.setField(client, "s3Client", new AmazonS3Fake());
 
         String expectedMessage = "Access Denied";
 
