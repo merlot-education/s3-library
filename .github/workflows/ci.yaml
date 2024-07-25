@@ -15,7 +15,6 @@
 name: Continuous Integration
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - "main"
@@ -29,36 +28,12 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Demo image tag
-        if: startsWith(github.ref, 'refs/tags/')
-        shell: bash {0}
-        run: |
-          tag=$(git describe --tags HEAD)
-          echo "tag=$tag" >> $GITHUB_ENV
-          echo "environment=demo" >> $GITHUB_ENV
-
-      - name: Dev image tag
-        if: startsWith(github.ref, 'refs/heads/')
-        shell: bash {0}
-        run: |
-          tag="$(grep -oPm1 '(?<=<version>)[^<]+' pom.xml)-$(git rev-parse --short HEAD)"
-          echo "tag=$tag" >> $GITHUB_ENV
-          echo "environment=dev" >> $GITHUB_ENV
-
+      - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
-
       - name: Publish package
-        run: mvn versions:set -DnewVersion=${{ env.tag }} && mvn --batch-mode deploy
+        run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          S3LIBRARY_ACCESSKEY: ${{ secrets.S3LIBRARY_ACCESSKEY }}
-          S3LIBRARY_SECRET: ${{ secrets.S3LIBRARY_SECRET }}
-          S3LIBRARY_SERVICEENDPOINT: ${{ vars.S3LIBRARY_SERVICEENDPOINT }}
