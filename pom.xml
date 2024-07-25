@@ -19,7 +19,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>eu.merlot-education</groupId>
   <artifactId>s3-library</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3</version>
   <name>s3-library</name>
   <description>Simple library for operations on S3 Buckets.</description>
   <url>https://merlot-education.eu/</url>
@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.1.4</version>
+    <version>3.3.2</version>
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
@@ -53,7 +53,7 @@
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-java-sdk</artifactId>
-      <version>1.12.564</version>
+      <version>1.12.763</version>
     </dependency>
 
     <dependency>
